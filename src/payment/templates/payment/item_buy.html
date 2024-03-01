@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Buy</title>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+<main>
+    <section class="text">
+        <h2>Название {{ item.name }}</h2>
+        <article>
+            <p>Описание {{ item.description }}</p>
+            <h3>Цена {{ item.price }}</h3>
+        </article>
+    </section>
+</main>
+
+{% csrf_token %}
+
+<script type="text/javascript">
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    let stripe = Stripe("{{ STRIPE_PUBLIC_KEY }}");
+    let buyButton = document.getElementById("buy-button");
+    buyButton.addEventListener("click", function () {
+        fetch("{% url 'payment:get_session_id' item.pk %}", {
+            method: "GET",
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (session) {
+                return stripe.redirectToCheckout({sessionId: session.id});
+            })
+            .then(function (result) {
+                if (result.error) {
+                    alert(result.error.message);
+                }
+            })
+            .catch(function (error) {
+                console.error("Error:", error);
+            });
+    });
+</script>
+</body>
+</html>
